@@ -1,8 +1,8 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, ViewStyle } from 'react-native';
 
-function chunkArray(array = [], size) {
-  if (array === []) return [];
-  return array.reduce((acc, val) => {
+function chunkArray(array = <any>[], size: number) {
+  if (array.length === 0) return [];
+  return array.reduce((acc: any[], val: any) => {
     if (acc.length === 0) acc.push([]);
     const last = acc[acc.length - 1];
     if (last.length < size) {
@@ -21,16 +21,30 @@ function calculateDimensions({
   fixed,
   spacing,
   maxItemsPerRow,
+}: {
+  itemDimension: number;
+  staticDimension?: number;
+  totalDimension: number;
+  fixed: boolean;
+  spacing: number;
+  maxItemsPerRow?: number;
 }) {
   const usableTotalDimension = staticDimension || totalDimension;
   const availableDimension = usableTotalDimension - spacing; // One spacing extra
-  const itemTotalDimension = Math.min(itemDimension + spacing, availableDimension); // itemTotalDimension should not exceed availableDimension
-  const itemsPerRow = Math.min(Math.floor(availableDimension / itemTotalDimension), maxItemsPerRow || Infinity);
+  const itemTotalDimension = Math.min(
+    itemDimension + spacing,
+    availableDimension
+  ); // itemTotalDimension should not exceed availableDimension
+  const itemsPerRow = Math.min(
+    Math.floor(availableDimension / itemTotalDimension),
+    maxItemsPerRow || Infinity
+  );
   const containerDimension = availableDimension / itemsPerRow;
 
-  let fixedSpacing;
+  let fixedSpacing = 0;
   if (fixed) {
-    fixedSpacing = (totalDimension - (itemDimension * itemsPerRow)) / (itemsPerRow + 1);
+    fixedSpacing =
+      (totalDimension - itemDimension * itemsPerRow) / (itemsPerRow + 1);
   }
 
   return {
@@ -42,19 +56,17 @@ function calculateDimensions({
   };
 }
 
-function getStyleDimensions(
-  style,
-  horizontal = false,
-) {
+function getStyleDimensions(style: ViewStyle, horizontal = false) {
   let space1 = 0;
   let space2 = 0;
-  let maxStyleDimension = undefined;
+  let maxStyleDimension;
   if (style) {
     const flatStyle = Array.isArray(style) ? StyleSheet.flatten(style) : style;
     let sMaxDimensionXY = 'maxWidth';
     let sPaddingXY = 'paddingHorizontal';
     let sPadding1 = 'paddingLeft';
     let sPadding2 = 'paddingRight';
+
     if (horizontal) {
       sMaxDimensionXY = 'maxHeight';
       sPaddingXY = 'paddingVertical';
@@ -62,15 +74,18 @@ function getStyleDimensions(
       sPadding2 = 'paddingBottom';
     }
 
-    if (flatStyle[sMaxDimensionXY] && typeof flatStyle[sMaxDimensionXY] === 'number') {
+    if (
+      flatStyle[sMaxDimensionXY] &&
+      typeof flatStyle[sMaxDimensionXY] === 'number'
+    ) {
       maxStyleDimension = flatStyle[sMaxDimensionXY];
     }
 
     const padding = flatStyle[sPaddingXY] || flatStyle.padding;
     const padding1 = flatStyle[sPadding1] || padding || 0;
     const padding2 = flatStyle[sPadding2] || padding || 0;
-    space1 = (typeof padding1 === 'number' ? padding1 : 0);
-    space2 = (typeof padding2 === 'number' ? padding2 : 0);
+    space1 = typeof padding1 === 'number' ? padding1 : 0;
+    space2 = typeof padding2 === 'number' ? padding2 : 0;
   }
   return { space1, space2, maxStyleDimension };
 }
@@ -82,6 +97,13 @@ function getAdjustedTotalDimensions({
   style,
   horizontal = false,
   adjustGridToStyles = false,
+}: {
+  totalDimension: number;
+  maxDimension?: number;
+  contentContainerStyle?: ViewStyle;
+  style?: ViewStyle;
+  horizontal?: boolean;
+  adjustGridToStyles?: boolean;
 }) {
   const componentDimension = totalDimension; // keep track of initial max of component/screen
   let actualMaxDimension = totalDimension; // keep track of smallest max dimension
@@ -91,10 +113,13 @@ function getAdjustedTotalDimensions({
     actualMaxDimension = maxDimension;
     totalDimension = maxDimension;
   }
-  
+
   if (adjustGridToStyles) {
     if (contentContainerStyle) {
-      const { space1, space2, maxStyleDimension } = getStyleDimensions(contentContainerStyle, horizontal);
+      const { space1, space2, maxStyleDimension } = getStyleDimensions(
+        contentContainerStyle,
+        horizontal
+      );
       // adjust for maxWidth or maxHeight in contentContainerStyle
       if (maxStyleDimension && totalDimension > maxStyleDimension) {
         actualMaxDimension = maxStyleDimension;
@@ -129,17 +154,24 @@ function generateStyles({
   fixed,
   horizontal,
   fixedSpacing,
+}: {
+  itemDimension: number;
+  containerDimension: number;
+  spacing: number;
+  fixed: boolean;
+  horizontal: boolean;
+  fixedSpacing: number;
 }) {
-  let rowStyle = {
+  let rowStyle: ViewStyle = {
     flexDirection: 'row',
     paddingLeft: fixed ? fixedSpacing : spacing,
     paddingBottom: spacing,
   };
 
-  let containerStyle = {
+  let containerStyle: ViewStyle = {
     flexDirection: 'column',
     justifyContent: 'center',
-    width: fixed ? itemDimension : (containerDimension - spacing),
+    width: fixed ? itemDimension : containerDimension - spacing,
     marginRight: fixed ? fixedSpacing : spacing,
   };
 
@@ -153,7 +185,7 @@ function generateStyles({
     containerStyle = {
       flexDirection: 'row',
       justifyContent: 'center',
-      height: fixed ? itemDimension : (containerDimension - spacing),
+      height: fixed ? itemDimension : containerDimension - spacing,
       marginBottom: fixed ? fixedSpacing : spacing,
     };
   }
@@ -164,4 +196,9 @@ function generateStyles({
   };
 }
 
-export { chunkArray, calculateDimensions, generateStyles, getAdjustedTotalDimensions };
+export {
+  chunkArray,
+  calculateDimensions,
+  generateStyles,
+  getAdjustedTotalDimensions,
+};
